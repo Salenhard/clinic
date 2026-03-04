@@ -1,4 +1,3 @@
-import React from "react";
 import { Card, CardContent, Chip, Stack, Typography } from "@mui/material";
 import type { GraphNode } from "../types/graph";
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Box, Container, MenuItem, Select, Stack, Typography } from "@mui/material";
 import { listGraphs, loadGraph } from "./api/graphs";
 import { ClinicalGraph } from "./types/graph";

@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Box, Button, Card, CardContent, Divider, MenuItem, Select, Stack, TextField, Typography } from "@mui/material";
-import { ClinicalGraph, GraphNode, QuestionNode } from "../types/graph";
+import { ClinicalGraph, QuestionNode } from "../types/graph";
 import { answerQuestion, applyNodeSideEffects, chooseNextNodeId, indexGraph, initCtx, Ctx } from "../utils/engine";
 import GraphViewer from "./GraphViewer";
 import RecommendationPanel from "./RecommendationPanel";
@@ -38,7 +38,7 @@ export default function ConsultationPage({ graph, onRestart }: Props) {
     );
   }
 
-  const isFinished = currentNode.type === "question" ? false : false; // рекомендации добавляются в ctx.recommendations
+//  const isFinished = currentNode.type === "question" ? false : false; // рекомендации добавляются в ctx.recommendations
 
   const handleYesNo = (v: boolean) => {
     const q = currentNode as QuestionNode;

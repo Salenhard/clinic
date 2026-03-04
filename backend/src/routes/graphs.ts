@@ -3,7 +3,7 @@ import { listGraphs, loadGraph } from "../services/graphStore.js";
 
 export const graphsRouter = Router();
 
-graphsRouter.get("/", (req, res) => {
+graphsRouter.get("/", (_req, res) => {
   res.json({ graphs: listGraphs() });
 });
 

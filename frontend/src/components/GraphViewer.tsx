@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import cytoscape from "cytoscape";
 import fcose from "cytoscape-fcose";
 import { Card, CardContent, Typography } from "@mui/material";
@@ -35,16 +35,15 @@ export default function GraphViewer({ graph, activeNodeId, pathNodeIds }: Props)
       container: ref.current,
       elements,
       style: [
-        { selector: "node", style: { "label": "data(label)", "font-size": 8, "text-wrap": "wrap", "text-max-width": 120, "border-width": 1 } },
-        { selector: "edge", style: { "curve-style": "bezier", "target-arrow-shape": "triangle", "width": 1, "label": "data(condition)", "font-size": 7 } },
+        { selector: "node", style: { "label": "data(label)", "font-size": "8", "text-wrap": "wrap", "text-max-width": "120", "border-width": "1" } },
+        { selector: "edge", style: { "curve-style": "bezier", "target-arrow-shape": "triangle", "width": "1", "label": "data(condition)", "font-size": "7" } },
 
         { selector: 'node[type="question"]', style: { "shape": "round-rectangle" } },
         { selector: 'node[type="condition"]', style: { "shape": "diamond" } },
-        { selector: 'node[type="recommendation"]', style: { "shape": "round-rectangle", "border-width": 2 } },
-        { selector: ".inPath", style: { "border-width": 3 } },
-        { selector: ".active", style: { "border-width": 4 } }
-      ],
-      layout: { name: "fcose", quality: "default", animate: false }
+        { selector: 'node[type="recommendation"]', style: { "shape": "round-rectangle", "border-width": "2" } },
+        { selector: ".inPath", style: { "border-width": "3" } },
+        { selector: ".active", style: { "border-width": "4" } }
+      ]
     });
 
     cyRef.current = cy;
