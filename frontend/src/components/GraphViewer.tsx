@@ -17,11 +17,11 @@ export default function GraphViewer({ graph, activeNodeId, pathNodeIds }: Props)
   const cyRef = useRef<cytoscape.Core | null>(null);
 
   const elements = useMemo(() => {
-    const nodes = graph.nodes.map((n) => ({
+    const nodes = graph.graph.nodes.map((n) => ({
       data: { id: n.id, label: `${n.label}`, type: n.type }
     }));
-    const edges = graph.edges.map((e, idx) => ({
-      data: { id: e.id ?? `e${idx}`, source: e.source, target: e.target, condition: e.condition }
+    const edges = graph.graph.edges.map((e, idx) => ({
+      data: { id: e.id ?? `e${idx}`, source: e.from, target: e.to, label: e.label }
     }));
     return [...nodes, ...edges];
   }, [graph]);
@@ -35,15 +35,19 @@ export default function GraphViewer({ graph, activeNodeId, pathNodeIds }: Props)
       container: ref.current,
       elements,
       style: [
-        { selector: "node", style: { "label": "data(label)", "font-size": "8", "text-wrap": "wrap", "text-max-width": "120", "border-width": "1" } },
-        { selector: "edge", style: { "curve-style": "bezier", "target-arrow-shape": "triangle", "width": "1", "label": "data(condition)", "font-size": "7" } },
+        { selector: "node", style: { "label": "data(label)", "font-size": "10", "text-wrap": "wrap", "text-max-width": "120", "border-width": "2", "padding": "10px" } },
+        { selector: "edge", style: { "curve-style": "bezier", "target-arrow-shape": "triangle", "width": "1", "label": "data(label)", "font-size": "8" } },
 
-        { selector: 'node[type="question"]', style: { "shape": "round-rectangle" } },
-        { selector: 'node[type="condition"]', style: { "shape": "diamond" } },
-        { selector: 'node[type="recommendation"]', style: { "shape": "round-rectangle", "border-width": "2" } },
-        { selector: ".inPath", style: { "border-width": "3" } },
-        { selector: ".active", style: { "border-width": "4" } }
-      ]
+        { selector: 'node[type="START"]', style: { "shape": "round-rectangle", "background-color": "#4CAF50", "color": "white" } },
+        { selector: 'node[type="DECISION"]', style: { "shape": "diamond", "background-color": "#2196F3", "color": "white" } },
+        { selector: 'node[type="ACTION"]', style: { "shape": "round-rectangle", "background-color": "#FF9800", "color": "white" } },
+        { selector: 'node[type="WARNING"]', style: { "shape": "round-rectangle", "background-color": "#F44336", "color": "white" } },
+        { selector: 'node[type="END"]', style: { "shape": "round-rectangle", "background-color": "#9C27B0", "color": "white" } },
+
+        { selector: ".inPath", style: { "border-width": "3", "border-color": "#FFC107" } },
+        { selector: ".active", style: { "border-width": "4", "border-color": "#FF5722" } }
+      ],
+      layout: { name: "fcose"}
     });
 
     cyRef.current = cy;

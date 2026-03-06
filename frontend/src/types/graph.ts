@@ -1,11 +1,12 @@
-export type NodeType = "question" | "condition" | "action" | "diagnosis" | "recommendation";
-export type QuestionKind = "yesno" | "number" | "select" | "text";
+export type NodeType = "START" | "DECISION" | "ACTION" | "WARNING" | "END";
 
-export interface GraphEdge {
-  id?: string;
-  source: string;
-  target: string;
-  condition: string;
+export interface ActionDetails {
+  procedure: string;
+  implant?: string;
+  timing?: string;
+  evidence_level?: string;
+  contraindications?: string[];
+  notes?: string;
 }
 
 export interface GraphNodeBase {
@@ -14,41 +15,74 @@ export interface GraphNodeBase {
   label: string;
 }
 
-export interface QuestionNode extends GraphNodeBase {
-  type: "question";
-  questionKind: QuestionKind;
-  key: string;
-  options?: { value: string; label: string }[];
-  unit?: string;
+export interface StartNode extends GraphNodeBase {
+  type: "START";
+  question: string | null;
+  options: string[];
+  action_details: null;
 }
 
-export interface ConditionNode extends GraphNodeBase {
-  type: "condition";
-  expression: string;
+export interface DecisionNode extends GraphNodeBase {
+  type: "DECISION";
+  question: string;
+  options: string[];
+  action_details: null;
 }
 
 export interface ActionNode extends GraphNodeBase {
-  type: "action";
-  action: { code: string; text: string };
+  type: "ACTION";
+  question?: string | null;
+  options?: string[];
+  action_details: ActionDetails;
 }
 
-export interface DiagnosisNode extends GraphNodeBase {
-  type: "diagnosis";
-  diagnosis: { code: string; text: string };
+export interface WarningNode extends GraphNodeBase {
+  type: "WARNING";
+  question?: string | null;
+  options?: string[];
+  action_details: ActionDetails;
 }
 
-export interface RecommendationNode extends GraphNodeBase {
-  type: "recommendation";
-  recommendation: { text: string; levelOfEvidence?: "A" | "B" | "C"; sourceSection?: string };
+export interface EndNode extends GraphNodeBase {
+  type: "END";
+  question?: string | null;
+  options?: string[];
+  action_details: null;
 }
 
-export type GraphNode = QuestionNode | ConditionNode | ActionNode | DiagnosisNode | RecommendationNode;
+export type GraphNode = StartNode | DecisionNode | ActionNode | WarningNode | EndNode;
 
-export interface ClinicalGraph {
+export interface EdgeCondition {
+  field: string;
+  operator: "==" | "!=" | "<" | ">" | "<=" | ">=";
+  value: string | number;
+}
+
+export interface GraphEdge {
   id: string;
-  name: string;
-  version: string;
-  startNodeId: string;
+  from: string;
+  to: string;
+  label?: string;
+  condition?: EdgeCondition | null;
+}
+
+export interface GraphData {
   nodes: GraphNode[];
   edges: GraphEdge[];
+}
+
+export interface ClinicalGraph {
+  metadata: {
+    source_document: string;
+    created_at: string;
+    version: string;
+    topic: string;
+  };
+  graph: GraphData;
+  changelog?: Array<{
+    action: string;
+    element: string;
+    id: string;
+    reason: string;
+  }>;
 }

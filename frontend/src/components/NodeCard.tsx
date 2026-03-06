@@ -7,11 +7,11 @@ type Props = {
 };
 
 const typeLabels: Record<string, string> = {
-  question: "Вопрос",
-  condition: "Условие",
-  action: "Действие",
-  diagnosis: "Диагноз",
-  recommendation: "Рекомендация"
+  START: "Начало",
+  DECISION: "Решение",
+  ACTION: "Процедура",
+  WARNING: "Предостережение",
+  END: "Конец"
 };
 
 export default function NodeCard({ node, isActive }: Props) {
@@ -32,46 +32,46 @@ export default function NodeCard({ node, isActive }: Props) {
           {node.label}
         </Typography>
 
-        {node.type === "question" && (
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Тип ответа: {node.questionKind}
-            {node.unit ? ` (${node.unit})` : ""}
-          </Typography>
-        )}
-
-        {node.type === "condition" && (
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ mt: 1, fontFamily: "monospace", whiteSpace: "pre-wrap" }}
-          >
-            {node.expression}
-          </Typography>
-        )}
-
-        {node.type === "action" && (
-          <Typography variant="body2" sx={{ mt: 1 }}>
-            • {node.action.text}
-          </Typography>
-        )}
-
-        {node.type === "diagnosis" && (
-          <Typography variant="body2" sx={{ mt: 1 }}>
-            • {node.diagnosis.text}
-          </Typography>
-        )}
-
-        {node.type === "recommendation" && (
+        {(node.type === "START" || node.type === "DECISION") && (
           <Stack spacing={1} sx={{ mt: 1 }}>
-            <Typography variant="body2">• {node.recommendation.text}</Typography>
-            <Stack direction="row" spacing={1} alignItems="center">
-              {node.recommendation.levelOfEvidence && (
-                <Chip size="small" label={`LoE: ${node.recommendation.levelOfEvidence}`} />
-              )}
-              {node.recommendation.sourceSection && (
-                <Chip size="small" variant="outlined" label={`Раздел: ${node.recommendation.sourceSection}`} />
-              )}
-            </Stack>
+            <Typography variant="body2" color="text.secondary">
+              <strong>Вопрос:</strong> {node.question}
+            </Typography>
+            {node.options.length > 0 && (
+              <Stack spacing={0.5}>
+                {node.options.map((opt) => (
+                  <Typography key={opt} variant="caption" sx={{ ml: 2 }}>
+                    • {opt}
+                  </Typography>
+                ))}
+              </Stack>
+            )}
+          </Stack>
+        )}
+
+        {(node.type === "ACTION" || node.type === "WARNING") && node.action_details && (
+          <Stack spacing={1} sx={{ mt: 1 }}>
+            <Typography variant="body2">
+              <strong>Процедура:</strong> {node.action_details.procedure}
+            </Typography>
+            {node.action_details.implant && (
+              <Typography variant="body2">
+                <strong>Имплант:</strong> {node.action_details.implant}
+              </Typography>
+            )}
+            {node.action_details.timing && (
+              <Typography variant="body2">
+                <strong>Время:</strong> {node.action_details.timing}
+              </Typography>
+            )}
+            {node.action_details.evidence_level && (
+              <Chip size="small" label={`УДД: ${node.action_details.evidence_level}`} />
+            )}
+            {node.action_details.notes && (
+              <Typography variant="caption" sx={{ fontStyle: "italic" }}>
+                {node.action_details.notes}
+              </Typography>
+            )}
           </Stack>
         )}
       </CardContent>

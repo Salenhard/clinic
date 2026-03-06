@@ -1,76 +1,72 @@
-import { ClinicalGraph, GraphEdge, GraphNode } from "../types/graph";
+import { ClinicalGraph, GraphEdge, GraphNode, EdgeCondition, StartNode, DecisionNode } from "../types/graph";
 
 export type Ctx = {
   answers: Record<string, any>;
-  actions: { code: string; text: string }[];
-  diagnoses: { code: string; text: string }[];
-  recommendations: { text: string; levelOfEvidence?: "A" | "B" | "C"; sourceSection?: string }[];
+  actions: { procedure: string; implant?: string; timing?: string; evidence_level?: string; contraindications?: string[]; notes?: string }[];
+  warnings: { procedure: string; implant?: string; timing?: string; evidence_level?: string; contraindications?: string[]; notes?: string }[];
   path: { nodeId: string; label: string; type: string }[];
   lastAnswer?: any;
-  lastCondition?: boolean; // результат последнего condition-узла
 };
 
 export function initCtx(): Ctx {
-  return { answers: {}, actions: [], diagnoses: [], recommendations: [], path: [] };
+  return { answers: {}, actions: [], warnings: [], path: [] };
 }
 
 export function indexGraph(g: ClinicalGraph) {
   const nodeById = new Map<string, GraphNode>();
-  g.nodes.forEach((n) => nodeById.set(n.id, n));
+  g.graph.nodes.forEach((n) => nodeById.set(n.id, n));
 
   const outEdges = new Map<string, GraphEdge[]>();
-  g.edges.forEach((e) => {
-    const arr = outEdges.get(e.source) ?? [];
+  g.graph.edges.forEach((e) => {
+    const arr = outEdges.get(e.from) ?? [];
     arr.push(e);
-    outEdges.set(e.source, arr);
+    outEdges.set(e.from, arr);
   });
 
   return { nodeById, outEdges };
 }
 
-function safeExprEval(expr: string, ctx: any): boolean {
-  // Минимально безопасный eval: функция с замкнутым ctx, без доступа к глобалам напрямую.
-  // В проде лучше: jsep + собственный интерпретатор или sandbox (vm2), но для демо — так.
-  // eslint-disable-next-line no-new-func
-  const fn = new Function("ctx", `"use strict"; return (${expr});`);
-  return Boolean(fn(ctx));
+function evaluateCondition(condition: EdgeCondition, answers: Record<string, any>): boolean {
+  const fieldValue = answers[condition.field];
+  const condValue = condition.value;
+
+  switch (condition.operator) {
+    case "==": return fieldValue === condValue;
+    case "!=": return fieldValue !== condValue;
+    case "<":  return Number(fieldValue) < Number(condValue);
+    case ">":  return Number(fieldValue) > Number(condValue);
+    case "<=": return Number(fieldValue) <= Number(condValue);
+    case ">=": return Number(fieldValue) >= Number(condValue);
+    default:   return false;
+  }
 }
 
-function matchEdgeCondition(edgeCond: string, ctx: Ctx): boolean {
-  if (edgeCond === "default") return true;
-
-  if (edgeCond === "yes") return ctx.lastAnswer === true || ctx.lastAnswer === "yes";
-  if (edgeCond === "no") return ctx.lastAnswer === false || ctx.lastAnswer === "no";
-
-  if (edgeCond.startsWith("range:")) {
-    const [, minS, maxS] = edgeCond.split(":");
-    const v = Number(ctx.lastAnswer);
-    const min = Number(minS);
-    const max = Number(maxS);
-    return !Number.isNaN(v) && v >= min && v <= max;
+function matchEdge(edge: GraphEdge, ctx: Ctx): boolean {
+  // 1. Если есть condition — проверяем его
+  if (edge.condition) {
+    return evaluateCondition(edge.condition, ctx.answers);
   }
-
-  if (edgeCond.startsWith("expr:")) {
-    const expr = edgeCond.slice(5);
-    return safeExprEval(expr, ctx);
+  // 2. Новый формат: совпадение label с lastAnswer
+  if (edge.label && ctx.lastAnswer !== undefined) {
+    return edge.label === ctx.lastAnswer;
   }
-
+  // 3. Нет ни condition, ни label — автопереход (безусловное ребро)
+  if (!edge.label && !edge.condition) {
+    return true;
+  }
   return false;
 }
 
 export function applyNodeSideEffects(node: GraphNode, ctx: Ctx): Ctx {
   const next = structuredClone(ctx) as Ctx;
-
   next.path.push({ nodeId: node.id, label: node.label, type: node.type });
 
-  if (node.type === "action") next.actions.push(node.action);
-  if (node.type === "diagnosis") next.diagnoses.push(node.diagnosis);
-  if (node.type === "recommendation") next.recommendations.push(node.recommendation);
-
-  if (node.type === "condition") {
-    next.lastCondition = safeExprEval(node.expression, next);
+  if (node.type === "ACTION" && node.action_details) {
+    next.actions.push(node.action_details);
   }
-
+  if (node.type === "WARNING" && node.action_details) {
+    next.warnings.push(node.action_details);
+  }
   return next;
 }
 
@@ -81,9 +77,13 @@ export function chooseNextNodeId(
 ): string | null {
   const edges = outEdges.get(currentNodeId) ?? [];
   for (const e of edges) {
-    if (matchEdgeCondition(e.condition, ctx)) return e.target;
+    if (matchEdge(e, ctx)) return e.to;
   }
   return null;
+}
+
+export function getQuestionKey(node: StartNode | DecisionNode): string {
+  return node.id;
 }
 
 export function answerQuestion(ctx: Ctx, key: string, value: any): Ctx {
