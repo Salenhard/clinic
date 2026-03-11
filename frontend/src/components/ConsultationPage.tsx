@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef, useLayoutEffect } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { Box, Button, Card, CardContent, Divider, Stack, Typography, Alert, AlertTitle } from "@mui/material";
 import { ClinicalGraph, StartNode, DecisionNode } from "../types/graph";
 import { answerQuestion, applyNodeSideEffects, chooseNextNodeId, indexGraph, initCtx, Ctx, getQuestionKey } from "../utils/engine";
@@ -18,40 +18,37 @@ function isAutoNode(node: any): boolean {
 
 export default function ConsultationPage({ graph, onRestart }: Props) {
   const { nodeById, outEdges } = useMemo(() => indexGraph(graph), [graph]);
+
   const [ctx, setCtx] = useState<Ctx>(() => initCtx());
-  const [currentNodeId, setCurrentNodeId] = useState(graph.graph.nodes[0].id);
+  const [currentNodeId, setCurrentNodeId] = useState<string>(() => graph.graph.nodes[0].id);
+
+  // Используем ref чтобы избежать двойного срабатывания в StrictMode
+  const pendingAutoRef = useRef<string | null>(null);
 
   const currentNode = nodeById.get(currentNodeId);
-  const processedNodes = useRef<Set<string>>(new Set());
-
-  useLayoutEffect(() => {
-    if (!currentNode) return;
-    if (processedNodes.current.has(currentNode.id)) return;
-    if (!isAutoNode(currentNode)) return;
-
-    processedNodes.current.add(currentNode.id);
-    const ctx2 = applyNodeSideEffects(currentNode, ctx);
-    setCtx(ctx2);
-
-    if (currentNode.type !== "END") {
-      const nextId = chooseNextNodeId(currentNode.id, ctx2, outEdges);
-      if (nextId) setCurrentNodeId(nextId);
-    }
-  }, [currentNode]);
 
   useEffect(() => {
     if (!currentNode) return;
     if (!isAutoNode(currentNode)) return;
+    // Защита от двойного запуска (React StrictMode)
+    if (pendingAutoRef.current === currentNode.id) return;
+    pendingAutoRef.current = currentNode.id;
 
-    const ctx2 = applyNodeSideEffects(currentNode, ctx);
-    setCtx(ctx2);
-
-    if (currentNode.type !== "END") {
-      const nextId = chooseNextNodeId(currentNode.id, ctx2, outEdges);
-      if (nextId) setCurrentNodeId(nextId);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentNodeId]);
+    setCtx((prevCtx) => {
+      const ctx2 = applyNodeSideEffects(currentNode, prevCtx);
+      if (currentNode.type !== "END") {
+        const nextId = chooseNextNodeId(currentNode.id, ctx2, outEdges);
+        if (nextId) {
+          // Откладываем смену узла чтобы не делать setState внутри setState
+          setTimeout(() => {
+            pendingAutoRef.current = null;
+            setCurrentNodeId(nextId);
+          }, 0);
+        }
+      }
+      return ctx2;
+    });
+  }, [currentNodeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!currentNode) {
     return (
@@ -72,7 +69,6 @@ export default function ConsultationPage({ graph, onRestart }: Props) {
     if (nextId) setCurrentNodeId(nextId);
   };
 
-  // WARNING: сохраняем в ctx и идём дальше — предупреждение остаётся в RecommendationPanel
   const handleWarningContinue = () => {
     const ctx2 = applyNodeSideEffects(currentNode, ctx);
     setCtx(ctx2);
@@ -81,7 +77,7 @@ export default function ConsultationPage({ graph, onRestart }: Props) {
   };
 
   const restart = () => {
-    processedNodes.current.clear();
+    pendingAutoRef.current = null;
     setCtx(initCtx());
     setCurrentNodeId(graph.graph.nodes[0].id);
     onRestart?.();
@@ -101,7 +97,6 @@ export default function ConsultationPage({ graph, onRestart }: Props) {
             </Typography>
             <Divider sx={{ mb: 2 }} />
 
-            {/* DECISION / START с вопросом */}
             {q && q.question && (
               <Stack spacing={2}>
                 <Typography variant="h5">{q.label}</Typography>
@@ -124,7 +119,6 @@ export default function ConsultationPage({ graph, onRestart }: Props) {
               </Stack>
             )}
 
-            {/* START без вопроса */}
             {q && !q.question && (
               <Stack spacing={2}>
                 <Typography variant="h5">{q.label}</Typography>
@@ -134,7 +128,6 @@ export default function ConsultationPage({ graph, onRestart }: Props) {
               </Stack>
             )}
 
-            {/* WARNING — показываем, ждём подтверждения. После — уходит в панель снизу */}
             {currentNode.type === "WARNING" && currentNode.action_details && (
               <Stack spacing={2}>
                 <Alert severity="warning" variant="filled">
@@ -145,19 +138,13 @@ export default function ConsultationPage({ graph, onRestart }: Props) {
                     <strong>Процедура:</strong> {currentNode.action_details.procedure}
                   </Typography>
                   {currentNode.action_details.implant && (
-                    <Typography variant="body2">
-                      <strong>Имплант:</strong> {currentNode.action_details.implant}
-                    </Typography>
+                    <Typography variant="body2"><strong>Имплант:</strong> {currentNode.action_details.implant}</Typography>
                   )}
                   {currentNode.action_details.timing && (
-                    <Typography variant="body2">
-                      <strong>Время:</strong> {currentNode.action_details.timing}
-                    </Typography>
+                    <Typography variant="body2"><strong>Время:</strong> {currentNode.action_details.timing}</Typography>
                   )}
                   {currentNode.action_details.evidence_level && (
-                    <Typography variant="body2">
-                      <strong>Уровень доказательств:</strong> {currentNode.action_details.evidence_level}
-                    </Typography>
+                    <Typography variant="body2"><strong>Уровень доказательств:</strong> {currentNode.action_details.evidence_level}</Typography>
                   )}
                   {currentNode.action_details.contraindications && currentNode.action_details.contraindications.length > 0 && (
                     <Box sx={{ mt: 1, p: 1, bgcolor: "rgba(0,0,0,0.15)", borderRadius: 1 }}>
@@ -179,7 +166,6 @@ export default function ConsultationPage({ graph, onRestart }: Props) {
               </Stack>
             )}
 
-            {/* ACTION */}
             {currentNode.type === "ACTION" && currentNode.action_details && (
               <Stack spacing={2}>
                 <Typography variant="h6">{currentNode.label}</Typography>
@@ -206,7 +192,6 @@ export default function ConsultationPage({ graph, onRestart }: Props) {
               </Stack>
             )}
 
-            {/* END */}
             {isFinished && (
               <Typography variant="h6" color="success.main">
                 ✅ Консультация завершена
@@ -220,12 +205,8 @@ export default function ConsultationPage({ graph, onRestart }: Props) {
           </CardContent>
         </Card>
 
-        <Box mt={2}>
-          <RecommendationPanel ctx={ctx} />
-        </Box>
-        <Box mt={2}>
-          <PathPanel ctx={ctx} />
-        </Box>
+        <Box mt={2}><RecommendationPanel ctx={ctx} /></Box>
+        <Box mt={2}><PathPanel ctx={ctx} /></Box>
       </Box>
 
       <Box>

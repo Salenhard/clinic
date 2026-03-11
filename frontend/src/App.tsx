@@ -21,6 +21,7 @@ export default function App() {
 
   useEffect(() => {
     if (!selected) return;
+    setGraph(null); // сбрасываем старый граф пока грузится новый
     loadGraph(selected)
       .then(setGraph)
       .catch((e) => setError(String(e)));
@@ -41,7 +42,8 @@ export default function App() {
       </Stack>
 
       {error && <Typography color="error">{error}</Typography>}
-      {graph && <ConsultationPage graph={graph} />}
+      {/* key={selected} — React полностью пересоздаёт ConsultationPage при смене графа */}
+      {graph && <ConsultationPage key={selected} graph={graph} />}
     </Container>
   );
 }
