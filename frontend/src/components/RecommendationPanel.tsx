@@ -2,18 +2,30 @@ import { Alert, AlertTitle, Box, Card, CardContent, Chip, Stack, Typography } fr
 import { Ctx } from "../utils/engine";
 
 export default function RecommendationPanel({ ctx }: { ctx: Ctx }) {
+  if (ctx.actions.length === 0 && ctx.warnings.length === 0) {
+    return (
+      <Card variant="outlined">
+        <CardContent>
+          <Typography variant="h6">Рекомендации</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Пройдите алгоритм для получения рекомендаций.
+          </Typography>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card variant="outlined">
       <CardContent>
-        <Typography variant="h6">Рекомендуемые процедуры</Typography>
+        <Typography variant="h6" gutterBottom>Рекомендации</Typography>
 
-        {ctx.actions.length === 0 ? (
-          <Typography variant="body2" sx={{ mt: 1 }}>Процедуры ещё не выбраны.</Typography>
-        ) : (
-          <Stack spacing={2} sx={{ mt: 2 }}>
+        {ctx.actions.length > 0 && (
+          <Stack spacing={2}>
             {ctx.actions.map((a, i) => (
-              <Stack key={i} spacing={1} sx={{ p: 1.5, bgcolor: "info.lighter", borderRadius: 1 }}>
-                <Typography variant="body1" sx={{ fontWeight: "bold" }}>{a.procedure}</Typography>
+              <Box key={i} sx={{ p: 1.5, bgcolor: "info.lighter", borderRadius: 1, border: "1px solid", borderColor: "info.light" }}>
+                <Typography variant="body1" sx={{ fontWeight: "bold" }}>{a.nodeLabel}</Typography>
+                <Typography variant="body2" sx={{ mt: 0.5 }}>{a.procedure}</Typography>
                 {a.implant && (
                   <Typography variant="body2"><strong>Имплант:</strong> {a.implant}</Typography>
                 )}
@@ -21,25 +33,24 @@ export default function RecommendationPanel({ ctx }: { ctx: Ctx }) {
                   <Typography variant="body2"><strong>Время:</strong> {a.timing}</Typography>
                 )}
                 {a.evidence_level && (
-                  <Chip label={`УДД: ${a.evidence_level}`} size="small" variant="filled" />
+                  <Chip label={`УДД: ${a.evidence_level}`} size="small" sx={{ mt: 0.5 }} />
                 )}
                 {a.notes && (
-                  <Typography variant="body2"><strong>Примечания:</strong> {a.notes}</Typography>
+                  <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5 }}>{a.notes}</Typography>
                 )}
-              </Stack>
+              </Box>
             ))}
           </Stack>
         )}
 
-        {/* Warnings остаются на странице до сброса контекста */}
+        {/* Warnings остаются до сброса контекста */}
         {ctx.warnings.length > 0 && (
-          <Stack spacing={2} sx={{ mt: 3 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-              ⚠️ Предостережения
-            </Typography>
+          <Stack spacing={2} sx={{ mt: ctx.actions.length > 0 ? 3 : 0 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>⚠️ Предостережения</Typography>
             {ctx.warnings.map((w, i) => (
               <Alert key={i} severity="warning" variant="outlined">
-                <AlertTitle sx={{ fontWeight: "bold" }}>{w.procedure}</AlertTitle>
+                <AlertTitle sx={{ fontWeight: "bold" }}>{w.nodeLabel}</AlertTitle>
+                <Typography variant="body2">{w.procedure}</Typography>
                 {w.implant && (
                   <Typography variant="body2"><strong>Имплант:</strong> {w.implant}</Typography>
                 )}
@@ -58,9 +69,7 @@ export default function RecommendationPanel({ ctx }: { ctx: Ctx }) {
                   </Box>
                 )}
                 {w.notes && (
-                  <Typography variant="body2" sx={{ mt: 0.5, fontStyle: "italic" }}>
-                    📝 {w.notes}
-                  </Typography>
+                  <Typography variant="body2" sx={{ mt: 0.5, fontStyle: "italic" }}>📝 {w.notes}</Typography>
                 )}
               </Alert>
             ))}

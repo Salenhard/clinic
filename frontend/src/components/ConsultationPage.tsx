@@ -1,134 +1,162 @@
-import { useMemo, useState, useRef, useEffect } from "react";
-import { Box, Button, Card, CardContent, Divider, Stack, Typography, Alert, AlertTitle } from "@mui/material";
-import { ClinicalGraph, StartNode, DecisionNode } from "../types/graph";
-import { answerQuestion, applyNodeSideEffects, chooseNextNodeId, indexGraph, initCtx, Ctx, getQuestionKey } from "../utils/engine";
+import { useMemo, useState, useCallback } from "react";
+import {
+  Box, Button, Card, CardContent, Divider, Stack,
+  Typography, Alert, AlertTitle, Chip
+} from "@mui/material";
+import { ClinicalGraph, DecisionNode, StartNode } from "../types/graph";
+import {
+  applyNode, chooseNextNodeId, indexGraph, initCtx, Ctx, validateGraph
+} from "../utils/engine";
 import GraphViewer from "./GraphViewer";
 import RecommendationPanel from "./RecommendationPanel";
 import PathPanel from "./PathPanel";
 
-type Props = { graph: ClinicalGraph; onRestart?: () => void };
+type Props = { graph: ClinicalGraph };
 
-function isAutoNode(node: any): boolean {
+// Узлы, где управление передаётся пользователю
+function needsUserInput(node: ReturnType<typeof Array.prototype[0]>): boolean {
   if (!node) return false;
-  if (node.type === "ACTION") return true;
-  if (node.type === "END") return true;
-  if (node.type === "START" && !node.question) return true;
+  if (node.type === "DECISION") return true;
+  if (node.type === "START" && node.question) return true;
+  if (node.type === "WARNING") return true;
   return false;
 }
 
-export default function ConsultationPage({ graph, onRestart }: Props) {
-  const { nodeById, outEdges } = useMemo(() => indexGraph(graph), [graph]);
+// Проходим по авто-узлам (START без вопроса, ACTION, END) пока не дойдём до
+// интерактивного или тупика. Возвращает финальный nodeId и обновлённый ctx.
+function runAutoAdvance(
+  startNodeId: string,
+  ctx: Ctx,
+  nodeById: Map<string, any>,
+  outEdges: Map<string, any[]>
+): { nodeId: string; ctx: Ctx } {
+  let nodeId = startNodeId;
+  let currentCtx = ctx;
+  const visited = new Set<string>();
 
-  const [ctx, setCtx] = useState<Ctx>(() => initCtx());
-  const [currentNodeId, setCurrentNodeId] = useState<string>(() => graph.graph.nodes[0].id);
+  while (true) {
+    if (visited.has(nodeId)) break; // защита от цикла
+    visited.add(nodeId);
 
-  // Используем ref чтобы избежать двойного срабатывания в StrictMode
-  const pendingAutoRef = useRef<string | null>(null);
+    const node = nodeById.get(nodeId);
+    if (!node) break;
+    if (needsUserInput(node)) break; // ждём пользователя
 
-  const currentNode = nodeById.get(currentNodeId);
+    // Применяем side-effects узла
+    currentCtx = applyNode(node, currentCtx);
 
-  useEffect(() => {
-    if (!currentNode) return;
-    if (!isAutoNode(currentNode)) return;
-    // Защита от двойного запуска (React StrictMode)
-    if (pendingAutoRef.current === currentNode.id) return;
-    pendingAutoRef.current = currentNode.id;
+    if (node.type === "END") break; // финиш
 
-    setCtx((prevCtx) => {
-      const ctx2 = applyNodeSideEffects(currentNode, prevCtx);
-      if (currentNode.type !== "END") {
-        const nextId = chooseNextNodeId(currentNode.id, ctx2, outEdges);
-        if (nextId) {
-          // Откладываем смену узла чтобы не делать setState внутри setState
-          setTimeout(() => {
-            pendingAutoRef.current = null;
-            setCurrentNodeId(nextId);
-          }, 0);
-        }
-      }
-      return ctx2;
-    });
-  }, [currentNodeId]); // eslint-disable-line react-hooks/exhaustive-deps
+    // Авто-переход: ищем ребро без label
+    const nextId = chooseNextNodeId(nodeId, null, outEdges);
+    if (!nextId) break; // тупик
 
-  if (!currentNode) {
-    return (
-      <Box p={2}>
-        <Typography color="error">Текущий узел не найден: {currentNodeId}</Typography>
-      </Box>
-    );
+    nodeId = nextId;
   }
 
-  const isFinished = currentNode.type === "END";
+  return { nodeId, ctx: currentCtx };
+}
 
-  const handleOptionSelect = (option: string) => {
-    const node = currentNode as StartNode | DecisionNode;
-    const questionKey = getQuestionKey(node);
-    const ctx2 = answerQuestion(ctx, questionKey, option);
-    setCtx(ctx2);
-    const nextId = chooseNextNodeId(currentNode.id, ctx2, outEdges);
-    if (nextId) setCurrentNodeId(nextId);
-  };
+export default function ConsultationPage({ graph }: Props) {
+  const { nodeById, outEdges } = useMemo(() => indexGraph(graph), [graph]);
+  const validation = useMemo(() => validateGraph(graph), [graph]);
 
-  const handleWarningContinue = () => {
-    const ctx2 = applyNodeSideEffects(currentNode, ctx);
-    setCtx(ctx2);
-    const nextId = chooseNextNodeId(currentNode.id, ctx2, outEdges);
-    if (nextId) setCurrentNodeId(nextId);
-  };
+  // Инициализируем состояние, сразу прогоняя авто-узлы от START
+  const [state, setState] = useState<{ nodeId: string; ctx: Ctx }>(() => {
+    const startId = graph.graph.nodes[0].id;
+    return runAutoAdvance(startId, initCtx(), nodeById, outEdges);
+  });
 
-  const restart = () => {
-    pendingAutoRef.current = null;
-    setCtx(initCtx());
-    setCurrentNodeId(graph.graph.nodes[0].id);
-    onRestart?.();
-  };
+  const currentNode = nodeById.get(state.nodeId);
+  const isFinished = currentNode?.type === "END";
 
-  const q = (currentNode.type === "START" || currentNode.type === "DECISION")
+  // Пользователь выбрал опцию (DECISION / START с вопросом)
+  const handleOptionSelect = useCallback((edgeLabel: string) => {
+    const nextId = chooseNextNodeId(state.nodeId, edgeLabel, outEdges);
+    if (!nextId) return;
+
+    // Сохраняем ответ в ctx, применяем текущий узел и прогоняем авто-цепочку
+    const ctxWithAnswer: Ctx = {
+      ...state.ctx,
+      answers: { ...state.ctx.answers, [state.nodeId]: edgeLabel },
+    };
+    const ctxWithNode = applyNode(currentNode, ctxWithAnswer);
+    const next = runAutoAdvance(nextId, ctxWithNode, nodeById, outEdges);
+    setState(next);
+  }, [state, currentNode, outEdges, nodeById]);
+
+  // Пользователь подтвердил WARNING — идём дальше
+  const handleWarningContinue = useCallback(() => {
+    const ctxWithNode = applyNode(currentNode, state.ctx);
+    const nextId = chooseNextNodeId(state.nodeId, null, outEdges);
+    if (!nextId) {
+      // нет авто-перехода — просто обновляем ctx, остаёмся
+      setState({ nodeId: state.nodeId, ctx: ctxWithNode });
+      return;
+    }
+    const next = runAutoAdvance(nextId, ctxWithNode, nodeById, outEdges);
+    setState(next);
+  }, [state, currentNode, outEdges, nodeById]);
+
+  // Сброс
+  const handleRestart = useCallback(() => {
+    const startId = graph.graph.nodes[0].id;
+    setState(runAutoAdvance(startId, initCtx(), nodeById, outEdges));
+  }, [graph, nodeById, outEdges]);
+
+  const q = (currentNode?.type === "START" || currentNode?.type === "DECISION")
     ? (currentNode as StartNode | DecisionNode)
     : null;
 
   return (
     <Box display="grid" gridTemplateColumns={{ xs: "1fr", lg: "2fr 1fr" }} gap={2} p={2}>
       <Box>
+
+        {/* Ошибки валидации */}
+        {!validation.valid && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            <AlertTitle>Ошибки в структуре графа</AlertTitle>
+            {validation.errors.map((e, i) => <Typography key={i} variant="body2">• {e}</Typography>)}
+          </Alert>
+        )}
+        {validation.warnings.length > 0 && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            <AlertTitle>Предупреждения о структуре</AlertTitle>
+            {validation.warnings.map((w, i) => <Typography key={i} variant="body2">• {w}</Typography>)}
+          </Alert>
+        )}
+
         <Card variant="outlined">
           <CardContent>
-            <Typography variant="h6" gutterBottom>
-              {graph.metadata.topic}
-            </Typography>
+            <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+              <Typography variant="h6" sx={{ flex: 1 }}>{graph.metadata.topic}</Typography>
+              <Chip label={`v${graph.metadata.version}`} size="small" />
+            </Stack>
             <Divider sx={{ mb: 2 }} />
 
+            {/* DECISION / START с вопросом */}
             {q && q.question && (
               <Stack spacing={2}>
                 <Typography variant="h5">{q.label}</Typography>
-                <Typography variant="body1">{q.question}</Typography>
-                {q.options && q.options.length > 0 && (
-                  <Stack spacing={1}>
-                    {q.options.map((option) => (
-                      <Button
-                        key={option}
-                        variant="outlined"
-                        fullWidth
-                        onClick={() => handleOptionSelect(option)}
-                        sx={{ justifyContent: "flex-start", textAlign: "left" }}
-                      >
-                        {option}
-                      </Button>
-                    ))}
-                  </Stack>
-                )}
+                <Typography variant="body1" color="text.secondary">{q.question}</Typography>
+                <Stack spacing={1}>
+                  {q.options.map((option) => (
+                    <Button
+                      key={option}
+                      variant="outlined"
+                      fullWidth
+                      onClick={() => handleOptionSelect(option)}
+                      sx={{ justifyContent: "flex-start", textAlign: "left", py: 1.5 }}
+                    >
+                      {option}
+                    </Button>
+                  ))}
+                </Stack>
               </Stack>
             )}
 
-            {q && !q.question && (
-              <Stack spacing={2}>
-                <Typography variant="h5">{q.label}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Автоматический переход...
-                </Typography>
-              </Stack>
-            )}
-
-            {currentNode.type === "WARNING" && currentNode.action_details && (
+            {/* WARNING — блокирует и ждёт подтверждения */}
+            {currentNode?.type === "WARNING" && currentNode.action_details && (
               <Stack spacing={2}>
                 <Alert severity="warning" variant="filled">
                   <AlertTitle sx={{ fontWeight: "bold", fontSize: "1rem" }}>
@@ -138,13 +166,19 @@ export default function ConsultationPage({ graph, onRestart }: Props) {
                     <strong>Процедура:</strong> {currentNode.action_details.procedure}
                   </Typography>
                   {currentNode.action_details.implant && (
-                    <Typography variant="body2"><strong>Имплант:</strong> {currentNode.action_details.implant}</Typography>
+                    <Typography variant="body2">
+                      <strong>Имплант:</strong> {currentNode.action_details.implant}
+                    </Typography>
                   )}
                   {currentNode.action_details.timing && (
-                    <Typography variant="body2"><strong>Время:</strong> {currentNode.action_details.timing}</Typography>
+                    <Typography variant="body2">
+                      <strong>Время:</strong> {currentNode.action_details.timing}
+                    </Typography>
                   )}
                   {currentNode.action_details.evidence_level && (
-                    <Typography variant="body2"><strong>Уровень доказательств:</strong> {currentNode.action_details.evidence_level}</Typography>
+                    <Typography variant="body2">
+                      <strong>Уровень доказательств:</strong> {currentNode.action_details.evidence_level}
+                    </Typography>
                   )}
                   {currentNode.action_details.contraindications && currentNode.action_details.contraindications.length > 0 && (
                     <Box sx={{ mt: 1, p: 1, bgcolor: "rgba(0,0,0,0.15)", borderRadius: 1 }}>
@@ -166,51 +200,29 @@ export default function ConsultationPage({ graph, onRestart }: Props) {
               </Stack>
             )}
 
-            {currentNode.type === "ACTION" && currentNode.action_details && (
-              <Stack spacing={2}>
-                <Typography variant="h6">{currentNode.label}</Typography>
-                <Box sx={{ bgcolor: "info.light", p: 2, borderRadius: 1 }}>
-                  <Typography variant="body2"><strong>Процедура:</strong> {currentNode.action_details.procedure}</Typography>
-                  {currentNode.action_details.implant && (
-                    <Typography variant="body2"><strong>Имплант:</strong> {currentNode.action_details.implant}</Typography>
-                  )}
-                  {currentNode.action_details.timing && (
-                    <Typography variant="body2"><strong>Время:</strong> {currentNode.action_details.timing}</Typography>
-                  )}
-                  {currentNode.action_details.evidence_level && (
-                    <Typography variant="body2"><strong>Уровень доказательств:</strong> {currentNode.action_details.evidence_level}</Typography>
-                  )}
-                  {currentNode.action_details.notes && (
-                    <Typography variant="body2"><strong>Примечания:</strong> {currentNode.action_details.notes}</Typography>
-                  )}
-                  {currentNode.action_details.contraindications && currentNode.action_details.contraindications.length > 0 && (
-                    <Typography variant="body2">
-                      <strong>Противопоказания:</strong> {currentNode.action_details.contraindications.join(", ")}
-                    </Typography>
-                  )}
-                </Box>
-              </Stack>
-            )}
-
+            {/* Завершение */}
             {isFinished && (
-              <Typography variant="h6" color="success.main">
-                ✅ Консультация завершена
-              </Typography>
+              <Alert severity="success">
+                <AlertTitle>✅ Консультация завершена</AlertTitle>
+                Рекомендации сформированы и отображены ниже.
+              </Alert>
             )}
 
             <Divider sx={{ my: 2 }} />
-            <Stack direction="row" spacing={2}>
-              <Button onClick={restart}>Начать заново</Button>
-            </Stack>
+            <Button variant="text" onClick={handleRestart}>↩ Начать заново</Button>
           </CardContent>
         </Card>
 
-        <Box mt={2}><RecommendationPanel ctx={ctx} /></Box>
-        <Box mt={2}><PathPanel ctx={ctx} /></Box>
+        <Box mt={2}><RecommendationPanel ctx={state.ctx} /></Box>
+        <Box mt={2}><PathPanel ctx={state.ctx} /></Box>
       </Box>
 
       <Box>
-        <GraphViewer graph={graph} activeNodeId={currentNodeId} pathNodeIds={ctx.path.map(p => p.nodeId)} />
+        <GraphViewer
+          graph={graph}
+          activeNodeId={state.nodeId}
+          pathNodeIds={state.ctx.path.map((p) => p.nodeId)}
+        />
       </Box>
     </Box>
   );

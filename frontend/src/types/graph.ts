@@ -2,8 +2,8 @@ export type NodeType = "START" | "DECISION" | "ACTION" | "WARNING" | "END";
 
 export interface ActionDetails {
   procedure: string;
-  implant?: string;
-  timing?: string;
+  implant?: string | null;
+  timing?: string | null;
   evidence_level?: string;
   contraindications?: string[];
   notes?: string;
@@ -59,10 +59,10 @@ export interface EdgeCondition {
 }
 
 export interface GraphEdge {
-  id: string;
+  id?: string;
   from: string;
   to: string;
-  label?: string;
+  label?: string | null;
   condition?: EdgeCondition | null;
 }
 
@@ -77,6 +77,7 @@ export interface ClinicalGraph {
     created_at: string;
     version: string;
     topic: string;
+    pipeline_version?: string;
   };
   graph: GraphData;
   changelog?: Array<{
@@ -85,4 +86,11 @@ export interface ClinicalGraph {
     id: string;
     reason: string;
   }>;
+}
+
+// Результат валидации графа
+export interface GraphValidationResult {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
 }
