@@ -18,15 +18,16 @@ export default function App() {
   const [graph, setGraph] = useState<ClinicalGraph | null>(null);
   const [loadError, setLoadError] = useState<string>("");
 
-  useEffect(() => {
-    listGraphs()
-      .then((d) => {
-        setGraphs(d.graphs ?? d);
-        const first = (d.graphs ?? d)[0];
-        if (first) setSelected(first.id);
-      })
-      .catch((e) => setLoadError(String(e)));
-  }, []);
+useEffect(() => {
+  listGraphs()
+    .then((d) => {
+      const graphsArray = Array.isArray(d) ? d : d.graphs;
+      setGraphs(graphsArray);
+      const first = graphsArray[0];
+      if (first) setSelected(first.id);
+    })
+    .catch((e) => setLoadError(String(e)));
+}, []);
 
   useEffect(() => {
     if (!selected) return;

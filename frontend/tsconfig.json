@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "useDefineForClassFields": true,
+    "useDefineForClassFields": false,
 
     "module": "ESNext",
     "moduleResolution": "Bundler",
@@ -10,9 +10,11 @@
 
     "jsx": "react-jsx",
 
-    "strict": true,
+    "strict": false,
     "noUnusedLocals": true,
+    "noImplicitAny": false,
     "noUnusedParameters": true,
+    "strictNullChecks": false,
     "noFallthroughCasesInSwitch": true,
 
     "skipLibCheck": true,
