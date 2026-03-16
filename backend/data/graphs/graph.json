@@ -1,7 +1,7 @@
 {
   "metadata": {
     "source_document": "guidelines.pdf",
-    "created_at": "2026-03-07T19:21:28.040183+00:00",
+    "created_at": "2026-03-16T05:22:46.399952+00:00",
     "version": "1.0",
     "topic": "clinical guidelines",
     "pipeline_version": "v2"
@@ -9,96 +9,60 @@
   "graph": {
     "nodes": [
       {
-        "id": "start",
+        "id": "start_001",
         "type": "START",
-        "label": "Начало",
+        "label": "Начало алгоритма",
         "question": null,
         "options": [],
         "action_details": null
       },
       {
-        "id": "dec_fracture",
+        "id": "dec_age",
         "type": "DECISION",
-        "label": "Тип перелома",
-        "question": "Тип перелома проксимального отдела бедренной кости?",
+        "label": "Возраст пациента",
+        "question": "Укажите возраст пациента",
+        "options": [
+          "< 60",
+          ">= 60"
+        ],
+        "action_details": null
+      },
+      {
+        "id": "dec_fracture_young",
+        "type": "DECISION",
+        "label": "Тип перелома (<60)",
+        "question": "Укажите тип перелома",
+        "options": [
+          "Pipkin",
+          "Garden",
+          "Стабильный чрезвертельный",
+          "Нестабильный чрезвертельный"
+        ],
+        "action_details": null
+      },
+      {
+        "id": "dec_fracture_old",
+        "type": "DECISION",
+        "label": "Тип перелома (>=60)",
+        "question": "Укажите тип перелома",
+        "options": [
+          "Pipkin",
+          "Garden",
+          "Стабильный чрезвертельный",
+          "Нестабильный чрезвертельный"
+        ],
+        "action_details": null
+      },
+      {
+        "id": "dec_pipkin",
+        "type": "DECISION",
+        "label": "Классификация Pipkin",
+        "question": "Укажите тип Pipkin",
         "options": [
           "Pipkin I",
           "Pipkin II",
           "Pipkin III",
-          "Pipkin IV",
-          "Garden I-II",
-          "Garden III-IV",
-          "AO (31A1.3, 31A2, подвертельные)"
-        ],
-        "action_details": null
-      },
-      {
-        "id": "act_pipkin_i",
-        "type": "ACTION",
-        "label": "Pipkin I",
-        "question": null,
-        "options": [],
-        "action_details": {
-          "procedure": "Удаление фрагмента головки",
-          "implant": null,
-          "timing": "Первично"
-        }
-      },
-      {
-        "id": "dec_pipkin_ii_age",
-        "type": "DECISION",
-        "label": "Возраст Pipkin II",
-        "question": "Возраст пациента?",
-        "options": [
-          "< 60",
-          "> 60"
-        ],
-        "action_details": null
-      },
-      {
-        "id": "act_pipkin_ii_young",
-        "type": "ACTION",
-        "label": "Pipkin II < 60",
-        "question": null,
-        "options": [],
-        "action_details": {
-          "procedure": "Остеосинтез канюлированными винтами",
-          "implant": "Канюлированные винты",
-          "timing": "Первично"
-        }
-      },
-      {
-        "id": "act_pipkin_ii_old",
-        "type": "ACTION",
-        "label": "Pipkin II > 60",
-        "question": null,
-        "options": [],
-        "action_details": {
-          "procedure": "ТЭТС",
-          "implant": "Эндопротез",
-          "timing": "Первично"
-        }
-      },
-      {
-        "id": "act_pipkin_iii",
-        "type": "ACTION",
-        "label": "Pipkin III",
-        "question": null,
-        "options": [],
-        "action_details": {
-          "procedure": "Первичное ТЭТС",
-          "implant": "Эндопротез",
-          "timing": "Первично"
-        }
-      },
-      {
-        "id": "dec_pipkin_iv_age",
-        "type": "DECISION",
-        "label": "Возраст Pipkin IV",
-        "question": "Возраст пациента?",
-        "options": [
-          "< 60",
-          "> 60"
+          "Pipkin IV"
         ],
         "action_details": null
       },
@@ -106,193 +70,176 @@
         "id": "dec_pipkin_iv_loc",
         "type": "DECISION",
         "label": "Локализация Pipkin IV",
-        "question": "Локализация перелома головки?",
+        "question": "Локализация перелома головки",
         "options": [
-          "дистальнее ямки",
-          "проксимальнее ямки"
+          "Дистальнее ямки",
+          "Проксимальнее ямки"
         ],
         "action_details": null
       },
       {
-        "id": "act_pipkin_iv_distal",
-        "type": "ACTION",
-        "label": "Pipkin IV дистальнее",
-        "question": null,
-        "options": [],
-        "action_details": {
-          "procedure": "Удаление фрагмента головки + остеосинтез впадины",
-          "implant": "Пластины/винты",
-          "timing": "Первично"
-        }
-      },
-      {
-        "id": "act_pipkin_iv_proximal",
-        "type": "ACTION",
-        "label": "Pipkin IV проксимальнее",
-        "question": null,
-        "options": [],
-        "action_details": {
-          "procedure": "Остеосинтез фрагментов головки и впадины",
-          "implant": "Канюлированные винты",
-          "timing": "Первично"
-        }
-      },
-      {
-        "id": "act_pipkin_iv_old",
-        "type": "ACTION",
-        "label": "Pipkin IV > 60",
-        "question": null,
-        "options": [],
-        "action_details": {
-          "procedure": "Остеосинтез впадины и ТЭТС",
-          "implant": "Эндопротез",
-          "timing": "Первично"
-        }
-      },
-      {
-        "id": "warn_garden",
-        "type": "WARNING",
-        "label": "Запрет гвоздей",
-        "question": null,
-        "options": [],
-        "action_details": {
-          "procedure": "НЕ ИСПОЛЬЗОВАТЬ трехлопастные гвозди",
-          "implant": null,
-          "timing": null
-        }
-      },
-      {
-        "id": "act_garden_i_ii",
-        "type": "ACTION",
-        "label": "Garden I-II",
-        "question": null,
-        "options": [],
-        "action_details": {
-          "procedure": "Динамическая фиксация",
-          "implant": "Телескопические винты",
-          "timing": "Первично"
-        }
-      },
-      {
-        "id": "dec_garden_iii_iv_age",
+        "id": "dec_garden_young",
         "type": "DECISION",
-        "label": "Возраст Garden III-IV",
-        "question": "Возраст пациента?",
+        "label": "Классификация Garden (<60)",
+        "question": "Укажите тип Garden",
         "options": [
-          "< 60",
-          "> 60"
+          "Garden I-II",
+          "Garden III-IV"
         ],
         "action_details": null
       },
       {
-        "id": "act_garden_iii_iv_young",
-        "type": "ACTION",
-        "label": "Garden III-IV < 60",
-        "question": null,
-        "options": [],
-        "action_details": {
-          "procedure": "Динамическая фиксация",
-          "implant": "Канюлированные винты",
-          "timing": "Первично"
-        }
-      },
-      {
-        "id": "dec_garden_iii_iv_status",
+        "id": "dec_garden_old",
         "type": "DECISION",
-        "label": "Статус Garden III-IV > 60",
-        "question": "Активность и когнитивный статус?",
+        "label": "Классификация Garden (>=60)",
+        "question": "Укажите тип Garden",
         "options": [
-          "Высокая активность",
-          "Низкая активность/когнитивные нарушения"
+          "Garden I-II",
+          "Garden III-IV"
         ],
         "action_details": null
       },
       {
-        "id": "act_tets",
+        "id": "dec_status_old",
+        "type": "DECISION",
+        "label": "Функциональный статус (>=60)",
+        "question": "Укажите статус",
+        "options": [
+          "Активный",
+          "Ослабленный"
+        ],
+        "action_details": null
+      },
+      {
+        "id": "act_pipkin_i",
         "type": "ACTION",
-        "label": "ТЭТС",
-        "question": null,
-        "options": [],
+        "label": "Удаление фрагмента",
         "action_details": {
-          "procedure": "Тотальное эндопротезирование",
-          "implant": "Эндопротез",
+          "procedure": "Удаление фрагмента головки",
           "timing": "Первично"
         }
       },
       {
-        "id": "act_hemi",
+        "id": "act_pipkin_ii",
         "type": "ACTION",
-        "label": "Гемиэндопротезирование",
-        "question": null,
-        "options": [],
+        "label": "Остеосинтез винтами",
+        "action_details": {
+          "procedure": "Остеосинтез канюлированными винтами",
+          "timing": "Первично"
+        }
+      },
+      {
+        "id": "act_pipkin_iii_young",
+        "type": "ACTION",
+        "label": "ТЭТС (молодые)",
+        "action_details": {
+          "procedure": "Первичное ТЭТС",
+          "timing": "Первично"
+        }
+      },
+      {
+        "id": "act_pipkin_iv_dist",
+        "type": "ACTION",
+        "label": "Остеосинтез впадины и удаление",
+        "action_details": {
+          "procedure": "Остеосинтез впадины + удаление фрагмента",
+          "timing": "Первично"
+        }
+      },
+      {
+        "id": "act_pipkin_iv_prox",
+        "type": "ACTION",
+        "label": "Остеосинтез впадины и винты",
+        "action_details": {
+          "procedure": "Остеосинтез впадины + остеосинтез головки винтами",
+          "timing": "Первично"
+        }
+      },
+      {
+        "id": "act_garden_dyn_young",
+        "type": "ACTION",
+        "label": "Динамическая фиксация (молодые)",
+        "action_details": {
+          "procedure": "Динамический остеосинтез",
+          "timing": "Первично"
+        }
+      },
+      {
+        "id": "act_garden_orif_young",
+        "type": "ACTION",
+        "label": "Остеосинтез (Garden III-IV молодые)",
+        "action_details": {
+          "procedure": "Остеосинтез шейки бедра",
+          "timing": "Первично"
+        }
+      },
+      {
+        "id": "act_garden_dyn_old",
+        "type": "ACTION",
+        "label": "Динамическая фиксация (пожилые)",
+        "action_details": {
+          "procedure": "Динамический остеосинтез с угловой стабильностью",
+          "timing": "Первично"
+        }
+      },
+      {
+        "id": "act_tets_old",
+        "type": "ACTION",
+        "label": "ТЭТС (активные пожилые)",
+        "action_details": {
+          "procedure": "Тотальное эндопротезирование ТБС",
+          "timing": "Первично"
+        }
+      },
+      {
+        "id": "act_hemi_old",
+        "type": "ACTION",
+        "label": "Гемиэндопротезирование (ослабленные пожилые)",
         "action_details": {
           "procedure": "Гемиэндопротезирование",
-          "implant": "Гемипротез",
           "timing": "Первично"
         }
       },
       {
-        "id": "dec_ao_age",
-        "type": "DECISION",
-        "label": "Возраст AO",
-        "question": "Возраст пациента?",
-        "options": [
-          "< 60",
-          "> 60"
-        ],
-        "action_details": null
-      },
-      {
-        "id": "dec_ao_young_type",
-        "type": "DECISION",
-        "label": "Тип AO < 60",
-        "question": "Тип перелома?",
-        "options": [
-          "Стабильный",
-          "Нестабильный"
-        ],
-        "action_details": null
-      },
-      {
-        "id": "act_ao_young_stable",
+        "id": "act_stable_dhs_young",
         "type": "ACTION",
-        "label": "AO < 60 Стабильный",
-        "question": null,
-        "options": [],
+        "label": "DHS (молодые)",
+        "action_details": {
+          "procedure": "Накостный остеосинтез DHS",
+          "timing": "Первично"
+        }
+      },
+      {
+        "id": "act_unstable_static_young",
+        "type": "ACTION",
+        "label": "Статическая фиксация (молодые)",
+        "action_details": {
+          "procedure": "Статическая фиксация интрамедуллярным штифтом",
+          "timing": "Первично"
+        }
+      },
+      {
+        "id": "act_stable_dhs_old",
+        "type": "ACTION",
+        "label": "DHS (пожилые)",
+        "action_details": {
+          "procedure": "Динамический остеосинтез",
+          "timing": "Первично"
+        }
+      },
+      {
+        "id": "act_unstable_dynamic_old",
+        "type": "ACTION",
+        "label": "Динамическая фиксация (пожилые)",
         "action_details": {
           "procedure": "Динамическая фиксация",
-          "implant": "DHS/Штифт",
           "timing": "Первично"
         }
       },
       {
-        "id": "act_ao_young_unstable",
-        "type": "ACTION",
-        "label": "AO < 60 Нестабильный",
-        "question": null,
-        "options": [],
-        "action_details": {
-          "procedure": "Статическая фиксация",
-          "implant": "Интрамедуллярный штифт",
-          "timing": "Первично (нагрузка через 8-10 нед)"
-        }
-      },
-      {
-        "id": "act_ao_old",
-        "type": "ACTION",
-        "label": "AO > 60",
-        "question": null,
-        "options": [],
-        "action_details": {
-          "procedure": "Динамическая фиксация",
-          "implant": "Интрамедуллярный штифт",
-          "timing": "Первично"
-        }
-      },
-      {
-        "id": "end",
+        "id": "end_001",
         "type": "END",
-        "label": "Конец",
+        "label": "Конец алгоритма",
         "question": null,
         "options": [],
         "action_details": null
@@ -300,283 +247,228 @@
     ],
     "edges": [
       {
-        "from": "start",
-        "to": "dec_fracture",
+        "id": "e1",
+        "from": "start_001",
+        "to": "dec_age",
         "label": null
       },
       {
-        "from": "dec_fracture",
+        "id": "e2",
+        "from": "dec_age",
+        "to": "dec_fracture_young",
+        "label": "< 60"
+      },
+      {
+        "id": "e3",
+        "from": "dec_age",
+        "to": "dec_fracture_old",
+        "label": ">= 60"
+      },
+      {
+        "id": "e4",
+        "from": "dec_fracture_young",
+        "to": "dec_pipkin",
+        "label": "Pipkin"
+      },
+      {
+        "id": "e5",
+        "from": "dec_fracture_young",
+        "to": "dec_garden_young",
+        "label": "Garden"
+      },
+      {
+        "id": "e6",
+        "from": "dec_fracture_young",
+        "to": "act_stable_dhs_young",
+        "label": "Стабильный чрезвертельный"
+      },
+      {
+        "id": "e7",
+        "from": "dec_fracture_young",
+        "to": "act_unstable_static_young",
+        "label": "Нестабильный чрезвертельный"
+      },
+      {
+        "id": "e8",
+        "from": "dec_fracture_old",
+        "to": "dec_pipkin",
+        "label": "Pipkin"
+      },
+      {
+        "id": "e9",
+        "from": "dec_fracture_old",
+        "to": "dec_garden_old",
+        "label": "Garden"
+      },
+      {
+        "id": "e10",
+        "from": "dec_fracture_old",
+        "to": "act_stable_dhs_old",
+        "label": "Стабильный чрезвертельный"
+      },
+      {
+        "id": "e11",
+        "from": "dec_fracture_old",
+        "to": "act_unstable_dynamic_old",
+        "label": "Нестабильный чрезвертельный"
+      },
+      {
+        "id": "e12",
+        "from": "dec_pipkin",
         "to": "act_pipkin_i",
         "label": "Pipkin I"
       },
       {
-        "from": "dec_fracture",
-        "to": "dec_pipkin_ii_age",
+        "id": "e13",
+        "from": "dec_pipkin",
+        "to": "act_pipkin_ii",
         "label": "Pipkin II"
       },
       {
-        "from": "dec_fracture",
-        "to": "act_pipkin_iii",
+        "id": "e14",
+        "from": "dec_pipkin",
+        "to": "act_pipkin_iii_young",
         "label": "Pipkin III"
       },
       {
-        "from": "dec_fracture",
-        "to": "dec_pipkin_iv_age",
+        "id": "e15",
+        "from": "dec_pipkin",
+        "to": "dec_pipkin_iv_loc",
         "label": "Pipkin IV"
       },
       {
-        "from": "dec_fracture",
-        "to": "warn_garden",
+        "id": "e16",
+        "from": "dec_pipkin_iv_loc",
+        "to": "act_pipkin_iv_dist",
+        "label": "Дистальнее ямки"
+      },
+      {
+        "id": "e17",
+        "from": "dec_pipkin_iv_loc",
+        "to": "act_pipkin_iv_prox",
+        "label": "Проксимальнее ямки"
+      },
+      {
+        "id": "e18",
+        "from": "dec_garden_young",
+        "to": "act_garden_dyn_young",
         "label": "Garden I-II"
       },
       {
-        "from": "dec_fracture",
-        "to": "dec_garden_iii_iv_age",
+        "id": "e19",
+        "from": "dec_garden_young",
+        "to": "act_garden_orif_young",
         "label": "Garden III-IV"
       },
       {
-        "from": "dec_fracture",
-        "to": "dec_ao_age",
-        "label": "AO (31A1.3, 31A2, подвертельные)"
+        "id": "e20",
+        "from": "dec_garden_old",
+        "to": "act_garden_dyn_old",
+        "label": "Garden I-II"
       },
       {
+        "id": "e21",
+        "from": "dec_garden_old",
+        "to": "dec_status_old",
+        "label": "Garden III-IV"
+      },
+      {
+        "id": "e22",
+        "from": "dec_status_old",
+        "to": "act_tets_old",
+        "label": "Активный"
+      },
+      {
+        "id": "e23",
+        "from": "dec_status_old",
+        "to": "act_hemi_old",
+        "label": "Ослабленный"
+      },
+      {
+        "id": "e24",
         "from": "act_pipkin_i",
-        "to": "end",
+        "to": "end_001",
         "label": null
       },
       {
-        "from": "dec_pipkin_ii_age",
-        "to": "act_pipkin_ii_young",
-        "label": "< 60"
-      },
-      {
-        "from": "dec_pipkin_ii_age",
-        "to": "act_pipkin_ii_old",
-        "label": "> 60"
-      },
-      {
-        "from": "act_pipkin_ii_young",
-        "to": "end",
+        "id": "e25",
+        "from": "act_pipkin_ii",
+        "to": "end_001",
         "label": null
       },
       {
-        "from": "act_pipkin_ii_old",
-        "to": "end",
+        "id": "e26",
+        "from": "act_pipkin_iii_young",
+        "to": "end_001",
         "label": null
       },
       {
-        "from": "act_pipkin_iii",
-        "to": "end",
+        "id": "e27",
+        "from": "act_pipkin_iv_dist",
+        "to": "end_001",
         "label": null
       },
       {
-        "from": "dec_pipkin_iv_age",
-        "to": "dec_pipkin_iv_loc",
-        "label": "< 60"
-      },
-      {
-        "from": "dec_pipkin_iv_age",
-        "to": "act_pipkin_iv_old",
-        "label": "> 60"
-      },
-      {
-        "from": "dec_pipkin_iv_loc",
-        "to": "act_pipkin_iv_distal",
-        "label": "дистальнее ямки"
-      },
-      {
-        "from": "dec_pipkin_iv_loc",
-        "to": "act_pipkin_iv_proximal",
-        "label": "проксимальнее ямки"
-      },
-      {
-        "from": "act_pipkin_iv_distal",
-        "to": "end",
+        "id": "e28",
+        "from": "act_pipkin_iv_prox",
+        "to": "end_001",
         "label": null
       },
       {
-        "from": "act_pipkin_iv_proximal",
-        "to": "end",
+        "id": "e29",
+        "from": "act_garden_dyn_young",
+        "to": "end_001",
         "label": null
       },
       {
-        "from": "act_pipkin_iv_old",
-        "to": "end",
+        "id": "e30",
+        "from": "act_garden_orif_young",
+        "to": "end_001",
         "label": null
       },
       {
-        "from": "warn_garden",
-        "to": "act_garden_i_ii",
+        "id": "e31",
+        "from": "act_garden_dyn_old",
+        "to": "end_001",
         "label": null
       },
       {
-        "from": "act_garden_i_ii",
-        "to": "end",
+        "id": "e32",
+        "from": "act_tets_old",
+        "to": "end_001",
         "label": null
       },
       {
-        "from": "dec_garden_iii_iv_age",
-        "to": "act_garden_iii_iv_young",
-        "label": "< 60"
-      },
-      {
-        "from": "dec_garden_iii_iv_age",
-        "to": "dec_garden_iii_iv_status",
-        "label": "> 60"
-      },
-      {
-        "from": "act_garden_iii_iv_young",
-        "to": "end",
+        "id": "e33",
+        "from": "act_hemi_old",
+        "to": "end_001",
         "label": null
       },
       {
-        "from": "dec_garden_iii_iv_status",
-        "to": "act_tets",
-        "label": "Высокая активность"
-      },
-      {
-        "from": "dec_garden_iii_iv_status",
-        "to": "act_hemi",
-        "label": "Низкая активность/когнитивные нарушения"
-      },
-      {
-        "from": "act_tets",
-        "to": "end",
+        "id": "e34",
+        "from": "act_stable_dhs_young",
+        "to": "end_001",
         "label": null
       },
       {
-        "from": "act_hemi",
-        "to": "end",
+        "id": "e35",
+        "from": "act_unstable_static_young",
+        "to": "end_001",
         "label": null
       },
       {
-        "from": "dec_ao_age",
-        "to": "dec_ao_young_type",
-        "label": "< 60"
-      },
-      {
-        "from": "dec_ao_age",
-        "to": "act_ao_old",
-        "label": "> 60"
-      },
-      {
-        "from": "dec_ao_young_type",
-        "to": "act_ao_young_stable",
-        "label": "Стабильный"
-      },
-      {
-        "from": "dec_ao_young_type",
-        "to": "act_ao_young_unstable",
-        "label": "Нестабильный"
-      },
-      {
-        "from": "act_ao_young_stable",
-        "to": "end",
+        "id": "e36",
+        "from": "act_stable_dhs_old",
+        "to": "end_001",
         "label": null
       },
       {
-        "from": "act_ao_young_unstable",
-        "to": "end",
+        "id": "e37",
+        "from": "act_unstable_dynamic_old",
+        "to": "end_001",
         "label": null
-      },
-      {
-        "from": "act_ao_old",
-        "to": "end",
-        "label": null
-      },
-      {
-        "id": "edge_post_fix_001",
-        "from": "warn_garden",
-        "to": "end",
-        "label": "Завершение ветки",
-        "condition": null
       }
     ]
   },
-  "changelog": [
-    {
-      "action": "added",
-      "element": "node",
-      "id": "end",
-      "reason": "Добавлен узел завершения"
-    },
-    {
-      "action": "added",
-      "element": "edge",
-      "id": "edge_fix_warn_end",
-      "reason": "Соединение warn_garden с end"
-    },
-    {
-      "action": "added",
-      "element": "node",
-      "id": "dec_ao_young_type",
-      "reason": "Разделение AO < 60 на стабильные/нестабильные"
-    },
-    {
-      "action": "added",
-      "element": "node",
-      "id": "act_ao_young_stable",
-      "reason": "Действие для стабильных AO < 60"
-    },
-    {
-      "action": "added",
-      "element": "node",
-      "id": "act_ao_young_unstable",
-      "reason": "Действие для нестабильных AO < 60"
-    },
-    {
-      "action": "modified",
-      "element": "node",
-      "id": "act_ao_old",
-      "reason": "Уточнение метода для пожилых"
-    },
-    {
-      "action": "added",
-      "element": "edge",
-      "id": "edge_post_fix_001",
-      "reason": "Автоисправление: WARNING 'warn_garden' не имел ребра к END"
-    },
-    {
-      "action": "added",
-      "element": "node",
-      "id": "dec_ao_age",
-      "reason": "Развертывание ветки AO"
-    },
-    {
-      "action": "added",
-      "element": "node",
-      "id": "dec_ao_young_type",
-      "reason": "Разделение AO < 60 на стабильные/нестабильные"
-    },
-    {
-      "action": "added",
-      "element": "node",
-      "id": "act_ao_young_stable",
-      "reason": "Специфичный метод для стабильных AO"
-    },
-    {
-      "action": "added",
-      "element": "node",
-      "id": "act_ao_young_unstable",
-      "reason": "Специфичный метод для нестабильных AO (статическая фиксация)"
-    },
-    {
-      "action": "added",
-      "element": "node",
-      "id": "act_ao_old",
-      "reason": "Метод для AO > 60"
-    },
-    {
-      "action": "modified",
-      "element": "node",
-      "id": "act_hemi",
-      "reason": "Исправлено описание имплантата"
-    },
-    {
-      "action": "added",
-      "element": "edge",
-      "id": "edge_post_fix_001",
-      "reason": "Автоисправление: WARNING 'warn_garden' не имел ребра к END"
-    }
-  ]
+  "changelog": []
 }
