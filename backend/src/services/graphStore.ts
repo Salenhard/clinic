@@ -4,7 +4,7 @@ import { ClinicalGraph } from "../types/graph.js";
 
 const GRAPHS_DIR = path.join(process.cwd(), "data", "graphs");
 
-function validateGraphStructure(raw: any, filename: string): string[] {
+function validateGraphStructure(raw: any, _filename: string): string[] {
   const errors: string[] = [];
 
   if (!raw.metadata) errors.push("Отсутствует блок metadata");
